@@ -101,6 +101,21 @@ test('triggers the onReschedule callback', t => {
   t.equal(emitterCount, 2, 'emitter has not been triggered again')
 })
 
+test('onReschedule clearTimeout', t => {
+  t.plan(1)
+
+  const ref = setHugeTimeout(() => {
+    t.fail('should not execute')
+  }, MAX_TIMEOUT + 1)
+
+  ref.emitter.on('reschedule', () => {
+    t.pass('should emit')
+    clock.clearTimeout(ref.timeout)
+  })
+
+  clock.tick(MAX_TIMEOUT + 1)
+})
+
 teardown(() => {
   clock.uninstall()
 })
