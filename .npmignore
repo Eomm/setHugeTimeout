@@ -130,3 +130,5 @@ dist
 .pnp.*
 .vscode/
 package-lock.json
+test/*
+.eslintrc
