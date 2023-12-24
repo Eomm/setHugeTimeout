@@ -63,6 +63,59 @@ test('updates the timeout reference', t => {
   clock.tick(MAX_TIMEOUT)
 })
 
+test('triggers the onReschedule callback', t => {
+  t.plan(13)
+
+  const ref = setHugeTimeout(() => {
+    t.pass('should execute')
+  }, MAX_TIMEOUT + MAX_TIMEOUT + 500)
+
+  let emitterCount = 0
+  ref.emitter.on('reschedule', delay => {
+    t.ok(delay > 0, `delay is defined: ${delay}`)
+    emitterCount++
+  })
+
+  let oldRef = ref.timeout
+  t.ok(ref.timeout, 'timeout is defined')
+  t.equal(emitterCount, 0, 'emitter has not been triggered')
+
+  clock.tick(400)
+  t.ok(oldRef === ref.timeout, 'timeout is the same')
+  t.equal(emitterCount, 0, 'emitter has not been triggered')
+
+  clock.tick(MAX_TIMEOUT)
+  t.notOk(oldRef === ref.timeout, 'timeout is updated - first time')
+  t.equal(emitterCount, 1, 'emitter has been triggered')
+  oldRef = ref.timeout
+
+  ref.emitter.on('reschedule', () => {
+    t.pass('can add multiple listeners')
+  })
+
+  clock.tick(MAX_TIMEOUT)
+  t.notOk(oldRef === ref.timeout, 'timeout is updated - second time')
+  t.equal(emitterCount, 2, 'emitter has been triggered twice')
+
+  clock.tick(MAX_TIMEOUT)
+  t.equal(emitterCount, 2, 'emitter has not been triggered again')
+})
+
+test('onReschedule clearTimeout', t => {
+  t.plan(1)
+
+  const ref = setHugeTimeout(() => {
+    t.fail('should not execute')
+  }, MAX_TIMEOUT + 1)
+
+  ref.emitter.on('reschedule', () => {
+    t.pass('should emit')
+    clock.clearTimeout(ref.timeout)
+  })
+
+  clock.tick(MAX_TIMEOUT + 1)
+})
+
 teardown(() => {
   clock.uninstall()
 })

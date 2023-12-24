@@ -16,10 +16,15 @@ npm install @eomm/set-huge-timeout
 
 Use it as a normal `setTimeout` call, but without caring about the limit!
 
-Note that the return value is an object with the `timeout` property.
-This is the reference to the timeout, so you can clear it using `clearTimeout`.
+Note that the returned value is an object instead of a `Timeout` object.
 
-Keep in mind that the `timeout` property is updated at every internal recursive call, so you can
+The object has two properties:
+
+- `timeout`: This is the reference to the timeout, so you can clear it using `clearTimeout`
+- `emitter`: This is an `EventEmitter` that emits some utility events:
+  - `reschedule`: Emitted when the timeout is rescheduled
+
+Keep in mind that the `timeout` property is updated at every internal reschedule, so you can
 clear the timeout at any time only if you read the `timeoutReference.timeout` property, otherwise
 you may read an old reference.
 
@@ -31,6 +36,10 @@ const oneYear = 31_536_000_000
 const timeoutReference = setHugeTimeout((message) => {
   console.log(message)
 }, oneYear, 'Hello, world!')
+
+timeoutReference.emitter.on('reschedule', (timeLeft) => {
+  console.log(`Rescheduled to ${timeLeft}`)
+})
 
 // Clear the timeout
 clearTimeout(timeoutReference.timeout)
