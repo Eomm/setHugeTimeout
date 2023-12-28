@@ -4,6 +4,9 @@ const { EventEmitter } = require('node:events')
 
 const MAX_TIMEOUT = 0x7FFFFFFF // 2147483647
 
+const globalTimeout = global.setTimeout
+let localTimeout = global.setTimeout
+
 function setHugeTimeout () {
   // 0: function
   // 1: delay
@@ -16,9 +19,9 @@ function setHugeTimeout () {
   })
 
   if (delay <= MAX_TIMEOUT) {
-    dynamicId.timeout = global.setTimeout.apply(null, arguments)
+    dynamicId.timeout = localTimeout.apply(null, arguments)
   } else {
-    dynamicId.timeout = global.setTimeout(() => {
+    dynamicId.timeout = localTimeout(() => {
       arguments[1] = delay - MAX_TIMEOUT
       setHugeTimeout.apply(dynamicId, arguments)
       dynamicId.emitter.emit('reschedule', arguments[1])
@@ -29,6 +32,16 @@ function setHugeTimeout () {
 }
 
 module.exports = {
+  __proto__: null,
   MAX_TIMEOUT,
-  setHugeTimeout
+  setHugeTimeout,
+
+  test: {
+    overwriteSetTimeout (setTimeoutFn) {
+      localTimeout = setTimeoutFn
+    },
+    restore () {
+      localTimeout = globalTimeout
+    }
+  }
 }
