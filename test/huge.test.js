@@ -1,10 +1,19 @@
 'use strict'
 
-const { test, teardown } = require('tap')
+const { test, beforeEach, afterEach } = require('tap')
 const FakeTimers = require('@sinonjs/fake-timers')
-const { setHugeTimeout, MAX_TIMEOUT } = require('../index.js')
+const hugeTimeout = require('../index.js')
+const { setHugeTimeout, MAX_TIMEOUT } = hugeTimeout
 
-const clock = FakeTimers.install()
+const clock = FakeTimers.createClock()
+
+beforeEach(() => {
+  hugeTimeout.test.overwriteSetTimeout(clock.setTimeout)
+})
+
+afterEach(() => {
+  hugeTimeout.test.restore()
+})
 
 test('can set MAX_TIMEOUT timeout', t => {
   t.plan(1)
@@ -114,8 +123,4 @@ test('onReschedule clearTimeout', t => {
   })
 
   clock.tick(MAX_TIMEOUT + 1)
-})
-
-teardown(() => {
-  clock.uninstall()
 })

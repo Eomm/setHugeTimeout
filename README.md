@@ -45,6 +45,39 @@ timeoutReference.emitter.on('reschedule', (timeLeft) => {
 clearTimeout(timeoutReference.timeout)
 ```
 
+### Test mode
+
+This module has a test mode that allows to ease the testing of huge timeouts.
+
+Here is an example using [Sinon Fake Timers](https://sinonjs.org/releases/latest/fake-timers/):
+
+```js
+const FakeTimers = require('@sinonjs/fake-timers')
+const HugeTimeout = require('@eomm/set-huge-timeout')
+
+const { setHugeTimeout } = HugeTimeout
+
+const clock = FakeTimers.createClock()
+
+// Overwrite the internal setTimeout with the fake one.
+// All the huge timeouts will be handled by the fake clock
+// after this call.
+hugeTimeout.test.overwriteSetTimeout(clock.setTimeout)
+
+const waitMs = 2_147_483_999
+
+// This timeout will be handled by the fake clock
+setHugeTimeout(() => {
+  console.log('Timeout!')
+}, waitMs)
+
+// Move the clock forward
+clock.tick(waitMs) // Output: Timeout!
+
+// Restore the original setTimeout when it's not needed anymore
+hugeTimeout.test.restore()
+```
+
 
 ## License
 
